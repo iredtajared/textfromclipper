@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TextFromClipper App</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;700&family=Poppins:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        cyan: {
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #22d3ee; cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #334155; border-radius: 2px; }
+        input[type=range]:focus { outline: none; }
+        
+        .video-container {
+            aspect-ratio: 9/16;
+            max-height: 80vh;
+            margin: 0 auto;
+            position: relative;
+            background: #000;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid #1e293b;
+        }
+
+        canvas#preview-canvas { width: 100%; height: 100%; object-fit: contain; }
+        .hidden-video { display: none; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 font-sans h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center z-10 shrink-0">
+        <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+            <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
+                TextFromClipper App
+            </h1>
+        </div>
+        <div class="text-sm text-slate-400 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            Full-Stack Mode
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- SIDEBAR CONTROLS -->
+        <aside class="w-full lg:w-[400px] xl:w-[450px] bg-slate-900 overflow-y-auto border-r border-slate-800 shrink-0 flex flex-col">
+            
+            <div class="p-5 space-y-8 flex-1">
+                
+                <!-- 1. VIDEO INPUT SOURCE -->
+                <section class="space-y-3">
+                    <h2 class="text-sm font-semibold tracking-wider text-slate-400 uppercase">1. Sumber Video</h2>
+                    
+                    <!-- Tabs -->
+                    <div class="flex bg-slate-800 p-1 rounded-lg">
+                        <button id="tab-local" class="flex-1 py-1.5 text-sm font-medium rounded-md bg-slate-700 text-white shadow" onclick="switchTab('local')">Upload Lokal</button>
+                        <button id="tab-url" class="flex-1 py-1.5 text-sm font-medium rounded-md text-slate-400 hover:text-white transition-colors" onclick="switchTab('url')">URL YouTube</button>
+                    </div>
+
+                    <!-- Local Upload Zone -->
+                    <div id="upload-local-zone" class="border-2 border-dashed border-slate-700 hover:border-cyan-500 transition-colors rounded-xl p-6 text-center cursor-pointer relative bg-slate-800/50 group" onclick="document.getElementById('video-upload').click()">
+                        <input type="file" id="video-upload" accept="video/mp4,video/webm,video/quicktime" class="hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2 text-slate-400 group-hover:text-cyan-400 transition-colors"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                        <p class="text-sm font-medium text-slate-300">Pilih Video dari PC/HP</p>
+                    </div>
+
+                    <!-- YouTube URL Zone -->
+                    <div id="upload-url-zone" class="hidden space-y-3">
+                        <input type="text" id="yt-url" placeholder="Paste link YouTube (https://...)" class="w-full bg-slate-800 border border-slate-700 rounded p-3 text-sm focus:border-cyan-500 focus:outline-none">
+                        <button id="fetch-yt-btn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-medium py-2 rounded transition-colors flex justify-center items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            Tarik Video & Transkrip
+                        </button>
+                        <p class="text-xs text-slate-500 text-center">*Membutuhkan Backend Server berjalan</p>
+                    </div>
+
+                </section>
+
+                <!-- AI VIRAL ANALYSIS (New Feature Mockup) -->
+                <section class="space-y-3 p-4 bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-indigo-500/30 rounded-xl hidden" id="ai-panel">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-400"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                        <h2 class="text-sm font-semibold tracking-wider text-indigo-300 uppercase">AI Virality Analysis</h2>
+                    </div>
+                    <button class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2 rounded transition-colors shadow-lg shadow-indigo-500/20">
+                        ✨ Temukan Hook Viral Otomatis
+                    </button>
+                    <p class="text-[10px] text-indigo-300/70 text-center">AI akan membaca transkrip dan memotong bagian terbaik.</p>
+                </section>
+
+                <div id="editor-controls" class="space-y-8 opacity-50 pointer-events-none transition-opacity duration-300">
+                    
+                    <!-- 2. VIDEO TRIMMER -->
+                    <section class="space-y-3">
+                        <h2 class="text-sm font-semibold tracking-wider text-slate-400 uppercase">2. Trim Video</h2>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs mb-1 text-slate-400">Mulai (Detik)</label>
+                                <input type="number" id="trim-start" value="0" min="0" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm focus:border-cyan-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs mb-1 text-slate-400">Selesai (Detik)</label>
+                                <input type="number" id="trim-end" value="0" min="0" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm focus:border-cyan-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div class="text-xs text-cyan-400 text-right">Durasi Clip: <span id="clip-duration">0.0</span>s</div>
+                    </section>
+
+                    <!-- 3. CROP & SMART FRAMING -->
+                    <section class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-sm font-semibold tracking-wider text-slate-400 uppercase">3. Framing (9:16)</h2>
+                            <span class="text-xs bg-slate-800 px-2 py-1 rounded text-slate-300">Posisi: <span id="crop-val-display">50%</span></span>
+                        </div>
+                        
+                        <div class="pt-2">
+                            <input type="range" id="crop-x" min="0" max="100" value="50">
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-2">
+                            <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded py-1.5 text-xs transition-colors" data-crop="15">👈 Kiri</button>
+                            <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded py-1.5 text-xs transition-colors" data-crop="50">👤 Tengah</button>
+                            <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded py-1.5 text-xs transition-colors" data-crop="85">Kanan 👉</button>
+                        </div>
+                    </section>
+
+                    <!-- 4. CAPTION EDITOR -->
+                    <section class="space-y-4">
+                        <h2 class="text-sm font-semibold tracking-wider text-slate-400 uppercase">4. Caption</h2>
+                        <div>
+                            <textarea id="caption-text" rows="3" placeholder="Masukkan caption di sini..." class="w-full bg-slate-800 border border-slate-700 rounded p-3 text-sm focus:border-cyan-500 focus:outline-none resize-none"></textarea>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+            
+            <!-- EXPORT PANEL -->
+            <div class="p-5 border-t border-slate-800 bg-slate-900/80 backdrop-blur shrink-0 space-y-3">
+                <button id="export-btn" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-bold py-3 rounded-lg shadow-lg shadow-cyan-500/20 transition-all transform active:scale-[0.98] opacity-50 pointer-events-none disabled:opacity-50 flex justify-center items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    Pangkas & Unduh (.webm)
+                </button>
+                <div id="export-status" class="hidden text-xs text-center text-cyan-400 animate-pulse">Memproses rendering video... Mohon tunggu.</div>
+            </div>
+        </aside>
+
+        <!-- MAIN WORKSPACE -->
+        <section class="flex-1 bg-slate-950 p-4 lg:p-8 flex flex-col justify-center relative">
+            <video id="source-video" class="hidden-video" crossorigin="anonymous"></video>
+            
+            <div class="w-full max-w-[450px] mx-auto">
+                <div class="video-container">
+                    <canvas id="preview-canvas" width="1080" height="1920"></canvas>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Logika Tab UI Lokal vs URL
+        function switchTab(tab) {
+            const btnLocal = document.getElementById('tab-local');
+            const btnUrl = document.getElementById('tab-url');
+            const zoneLocal = document.getElementById('upload-local-zone');
+            const zoneUrl = document.getElementById('upload-url-zone');
+            const aiPanel = document.getElementById('ai-panel');
+
+            if (tab === 'local') {
+                btnLocal.className = "flex-1 py-1.5 text-sm font-medium rounded-md bg-slate-700 text-white shadow";
+                btnUrl.className = "flex-1 py-1.5 text-sm font-medium rounded-md text-slate-400 hover:text-white transition-colors";
+                zoneLocal.classList.remove('hidden');
+                zoneUrl.classList.add('hidden');
+                aiPanel.classList.add('hidden');
+            } else {
+                btnUrl.className = "flex-1 py-1.5 text-sm font-medium rounded-md bg-slate-700 text-white shadow";
+                btnLocal.className = "flex-1 py-1.5 text-sm font-medium rounded-md text-slate-400 hover:text-white transition-colors";
+                zoneUrl.classList.remove('hidden');
+                zoneLocal.classList.add('hidden');
+                aiPanel.classList.remove('hidden');
+            }
+        }
+
+        // Variabel Utama
+        const videoInput = document.getElementById('video-upload');
+        const sourceVideo = document.getElementById('source-video');
+        const canvas = document.getElementById('preview-canvas');
+        const ctx = canvas.getContext('2d');
+        const editorControls = document.getElementById('editor-controls');
+        
+        let animationId;
+        let cropXPercent = 50;
+
+        // Saat Video Dipilih (Lokal)
+        videoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const fileURL = URL.createObjectURL(file);
+            sourceVideo.src = fileURL;
+            
+            sourceVideo.onloadedmetadata = () => {
+                editorControls.classList.remove('opacity-50', 'pointer-events-none');
+                document.getElementById('export-btn').classList.remove('opacity-50', 'pointer-events-none');
+                document.getElementById('trim-end').value = sourceVideo.duration.toFixed(1);
+                
+                sourceVideo.play();
+                sourceVideo.muted = true;
+                sourceVideo.loop = true;
+                drawFrame();
+            };
+        });
+
+        // Logika Menggambar ke Canvas
+        function drawFrame() {
+            if (sourceVideo.paused || sourceVideo.ended) return;
+
+            // 1. Gambar Video Background dengan Crop
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const vRatio = canvas.width / canvas.height;
+            const videoRatio = sourceVideo.videoWidth / sourceVideo.videoHeight;
+            
+            let sWidth, sHeight, sx, sy;
+
+            if (videoRatio > vRatio) {
+                // Video lebih lebar (Landscape ke Portrait)
+                sHeight = sourceVideo.videoHeight;
+                sWidth = sHeight * vRatio;
+                sx = ((sourceVideo.videoWidth - sWidth) * (cropXPercent / 100));
+                sy = 0;
+            } else {
+                // Video lebih tinggi
+                sWidth = sourceVideo.videoWidth;
+                sHeight = sWidth / vRatio;
+                sx = 0;
+                sy = (sourceVideo.videoHeight - sHeight) / 2;
+            }
+
+            ctx.drawImage(sourceVideo, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
+
+            // 2. Gambar Caption
+            const captionText = document.getElementById('caption-text').value;
+            if (captionText) {
+                ctx.fillStyle = "white";
+                ctx.font = "bold 80px Inter";
+                ctx.textAlign = "center";
+                ctx.lineWidth = 8;
+                ctx.strokeStyle = "black";
+                
+                // Wrapping text basic
+                const maxWidth = canvas.width - 100;
+                let y = canvas.height * 0.7; // Posisi di bawah
+                ctx.strokeText(captionText, canvas.width/2, y, maxWidth);
+                ctx.fillText(captionText, canvas.width/2, y, maxWidth);
+            }
+
+            animationId = requestAnimationFrame(drawFrame);
+        }
+
+        // Slider Posisi Crop
+        document.getElementById('crop-x').addEventListener('input', (e) => {
+            cropXPercent = e.target.value;
+            document.getElementById('crop-val-display').innerText = cropXPercent + '%';
+        });
+
+        // Auto Refresh saat ngetik caption
+        document.getElementById('caption-text').addEventListener('input', () => {
+            if(sourceVideo.paused) {
+                sourceVideo.play(); // trigger redraw
+            }
+        });
+    </script>
+</body>
+</html>
