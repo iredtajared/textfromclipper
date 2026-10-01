@@ -259,13 +259,26 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Karena ini masih mockup, kita berikan alert.
-                    alert(`✅ Server merespons!\n\nJudul: ${data.video_title}\nTranskrip: "${data.transcript}"\n\n(Catatan: Ini adalah data simulasi dari server.js. Untuk video sungguhan, kita perlu menginstal library ytdl-core di server).`);
-                    
                     // Tampilkan transkrip di panel AI
                     const mockTranscript = document.getElementById('mock-transcript');
                     mockTranscript.value = data.transcript;
                     mockTranscript.classList.remove('hidden');
+
+                    // STREAM VIDEO LANGSUNG KE CANVAS
+                    sourceVideo.src = data.stream_url;
+                    
+                    sourceVideo.onloadedmetadata = () => {
+                        editorControls.classList.remove('opacity-50', 'pointer-events-none');
+                        document.getElementById('export-btn').classList.remove('opacity-50', 'pointer-events-none');
+                        document.getElementById('trim-end').value = sourceVideo.duration.toFixed(1);
+                        
+                        sourceVideo.play();
+                        sourceVideo.muted = true;
+                        sourceVideo.loop = true;
+                        drawFrame();
+                    };
+                    
+                    alert(`✅ Berhasil!\n\nJudul: ${data.video_title}\n\nVideo sedang diproses dan dimasukkan ke kanvas. Tunggu beberapa detik jika koneksi lambat.`);
                 } else {
                     alert("Error dari server: " + data.error);
                 }
